@@ -12,7 +12,7 @@ import (
 // [7, 8, 9]
 
 func main() {
-	size := 1500
+	size := 2000
 	// rows := make([]float32, size)
 	// cols := make([]float32, size)
 	// for i := 0; i < size; i++ {
@@ -97,54 +97,52 @@ func matMulSeq(m1, m2 [][]float32) [][]float32 {
 }
 
 func matMulDist(m1, m2 [][]float32) [][]float32 {
-	// size := len(m1)
 	out := make([][]float32, len(m1))
-	// output := make(chan [][]float32, len(m1))
-	// fmt.Println(len(m1))
-
 	for i := range out {
 		out[i] = make([]float32, len(m1))
 	}
-	element := make(chan []float32)
+	// important to use an index like this since
+	// we dont know when the math will finish
+	// so knowing/passing the index guarantees
+	// it will be in the right place later
+	element := make(chan struct {
+		i    int
+		data []float32
+	}, len(m1))
 
 	for i := 0; i < len(m1); i++ {
-		// element = make(chan float32)
-		// go func()
 		// element := make(chan []float32)
-		go getMatMulRow(m1, m2, i, element)
+		// go getMatMulRow(m1, m2, i, element)
 
-		out[i] = <-element
-		// close(element)
-
-		// for j := 0; j < len(m1); j++ {
-		// 	// go func()
-		// 	element := make(chan float32)
-		// 	// go getMatMulElement(m1, m2, i, j, element)
-		// 	// for k := 0; k < len(m1[0]); k++ {
-		// 	// 	out[i][j] += m1[i][k] * m2[k][j]
-		// 	// }
-		// 	out[i][j] =<-element
-		// 	close(element)
-		// }
+		go func(i int) {
+			out := make([]float32, len(m1))
+			for j := 0; j < len(m1); j++ {
+				for k := 0; k < len(m1); k++ {
+					out[j] += m1[i][k] * m2[k][j]
+				}
+			}
+			element <- struct {
+				i    int
+				data []float32
+			}{i: i, data: out}
+		}(i)
 	}
-	close(element)
-
+	for i := 0; i < len(m1); i++ {
+		temp := <-element
+		out[temp.i] = temp.data
+	}
 	return out
 }
 
-// func matMulRow(r1, r2 [][]float32) [][]float32 {
-
+// func getMatMulRow(m1, m2 [][]float32, i int, element chan<- []float32) {
+// 	out := make([]float32, len(m1))
+// 	for j := 0; j < len(m1); j++ {
+// 		for k := 0; k < len(m1); k++ {
+// 			out[j] += m1[i][k] * m2[k][j]
+// 		}
+// 	}
+// 	element <- out
 // }
-
-func getMatMulRow(m1, m2 [][]float32, i int, element chan<- []float32) {
-	out := make([]float32, len(m1))
-	for j := 0; j < len(m1); j++ {
-		for k := 0; k < len(m1); k++ {
-			out[j] += m1[i][k] * m2[k][j]
-		}
-	}
-	element <- out
-}
 
 func checkMatMul(out1, out2 [][]float32) bool {
 	size := len(out1)
