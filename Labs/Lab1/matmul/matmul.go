@@ -15,55 +15,14 @@ import (
 // [7, 8, 9]
 
 func main() {
-	// size := 2000
-	// rows := make([]float64, size)
-	// cols := make([]float64, size)
-	// for i := 0; i < size; i++ {
-	// 	for j := 0; j < size; j++ {
+	// --------------------
+	// EDIT VALUES HERE
+	amount := 1
+	increment := 0
+	start := 1000
+	// --------------------
 
-	// 	}
-	// 	rows[i] = rand.Float64()
-	// 	cols[i] = rand.Float64()
-	// 	fmt.Println(rows[i], cols[i])
-	// }
-
-	// matrix1 := make([][]float64, size)
-	// matrix2 := make([][]float64, size)
-	// for i := range size {
-	// 	matrix1[i] = make([]float64, size)
-	// 	matrix2[i] = make([]float64, size)
-	// }
-	// for i := 0; i < size; i++ {
-	// 	for j := 0; j < size; j++ {
-	// 		matrix1[i][j] = rand.Float64()
-	// 		matrix2[i][j] = rand.Float64()
-	// 		fmt.Println(matrix1[i][j], "i: ", i, "j: ", j)
-	// 	}
-	// }
-
-	// mtx1 := genMtx(size)
-	// mtx2 := genMtx(size)
-	// fmt.Println(len(mtx1))
-	// // fmt.Println(len(mtx2))
-	// // fmt.Println("first line:", matrix2[0][0])
-	// beforeSeq := time.Now()
-	// mtxoutSeq := matMulSeq(mtx1, mtx2)
-	// afterSeq := time.Since(beforeSeq)
-
-	// fmt.Println("sequential done")
-
-	// beforeDist := time.Now()
-	// mtxoutDist := matMulDist(mtx1, mtx2)
-	// afterDist := time.Since(beforeDist)
-
-	// fmt.Println("distributed done")
-
-	// // fmt.Println(mtxoutDist[0][0])
-
-	// fmt.Println("sequential time:", afterSeq)
-	// fmt.Println("dist time:", afterDist)
-	// fmt.Println("check?: ", checkMatMul(mtxoutDist, mtxoutSeq))
-	printResults(runTests(100, 10, 10))
+	printResults(runTests(amount, increment, start))
 	// runTests(1, 0, 1500)
 }
 
@@ -194,6 +153,7 @@ func runTests(amount, increment, start int) []struct {
 
 		fmt.Println("distributed done:", afterDist)
 		fmt.Println("check?: ", checkMatMul(mtxoutDist, mtxoutSeq))
+		fmt.Println()
 
 		out[run] = struct {
 			run      int
@@ -243,7 +203,7 @@ func printResults(result []struct {
 
 	graph.Series = append(graph.Series, seqSeries, distSeries)
 
-	f, _ := os.Create("output64.png")
+	f, _ := os.Create("output.png")
 	defer f.Close()
 	graph.Render(chart.PNG, f)
 }
