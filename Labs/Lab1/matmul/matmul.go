@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
+
+	"github.com/wcharczuk/go-chart/v2"
 )
 
 // matrix:
@@ -12,77 +15,78 @@ import (
 // [7, 8, 9]
 
 func main() {
-	size := 2000
-	// rows := make([]float32, size)
-	// cols := make([]float32, size)
+	// size := 2000
+	// rows := make([]float64, size)
+	// cols := make([]float64, size)
 	// for i := 0; i < size; i++ {
 	// 	for j := 0; j < size; j++ {
 
 	// 	}
-	// 	rows[i] = rand.Float32()
-	// 	cols[i] = rand.Float32()
+	// 	rows[i] = rand.Float64()
+	// 	cols[i] = rand.Float64()
 	// 	fmt.Println(rows[i], cols[i])
 	// }
 
-	// matrix1 := make([][]float32, size)
-	// matrix2 := make([][]float32, size)
+	// matrix1 := make([][]float64, size)
+	// matrix2 := make([][]float64, size)
 	// for i := range size {
-	// 	matrix1[i] = make([]float32, size)
-	// 	matrix2[i] = make([]float32, size)
+	// 	matrix1[i] = make([]float64, size)
+	// 	matrix2[i] = make([]float64, size)
 	// }
 	// for i := 0; i < size; i++ {
 	// 	for j := 0; j < size; j++ {
-	// 		matrix1[i][j] = rand.Float32()
-	// 		matrix2[i][j] = rand.Float32()
+	// 		matrix1[i][j] = rand.Float64()
+	// 		matrix2[i][j] = rand.Float64()
 	// 		fmt.Println(matrix1[i][j], "i: ", i, "j: ", j)
 	// 	}
 	// }
 
-	mtx1 := genMtx(size)
-	mtx2 := genMtx(size)
-	fmt.Println(len(mtx1))
-	// fmt.Println(len(mtx2))
-	// fmt.Println("first line:", matrix2[0][0])
-	beforeSeq := time.Now()
-	mtxoutSeq := matMulSeq(mtx1, mtx2)
-	afterSeq := time.Since(beforeSeq)
+	// mtx1 := genMtx(size)
+	// mtx2 := genMtx(size)
+	// fmt.Println(len(mtx1))
+	// // fmt.Println(len(mtx2))
+	// // fmt.Println("first line:", matrix2[0][0])
+	// beforeSeq := time.Now()
+	// mtxoutSeq := matMulSeq(mtx1, mtx2)
+	// afterSeq := time.Since(beforeSeq)
 
-	fmt.Println("sequential done")
+	// fmt.Println("sequential done")
 
-	beforeDist := time.Now()
-	mtxoutDist := matMulDist(mtx1, mtx2)
-	afterDist := time.Since(beforeDist)
+	// beforeDist := time.Now()
+	// mtxoutDist := matMulDist(mtx1, mtx2)
+	// afterDist := time.Since(beforeDist)
 
-	fmt.Println("distributed done")
+	// fmt.Println("distributed done")
 
-	// fmt.Println(mtxoutDist[0][0])
+	// // fmt.Println(mtxoutDist[0][0])
 
-	fmt.Println("sequential time:", afterSeq)
-	fmt.Println("dist time:", afterDist)
-	fmt.Println("check?: ", checkMatMul(mtxoutDist, mtxoutSeq))
-
+	// fmt.Println("sequential time:", afterSeq)
+	// fmt.Println("dist time:", afterDist)
+	// fmt.Println("check?: ", checkMatMul(mtxoutDist, mtxoutSeq))
+	printResults(runTests(100, 10, 10))
+	// runTests(1, 0, 1500)
 }
 
-func genMtx(size int) [][]float32 {
-	mtx := make([][]float32, size)
+func genMtx(size int) [][]float64 {
+	mtx := make([][]float64, size)
 	for i := range size {
-		mtx[i] = make([]float32, size)
+		mtx[i] = make([]float64, size)
 	}
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
-			mtx[i][j] = rand.Float32()
+			mtx[i][j] = rand.Float64()
 			// fmt.Println(mtx[i][j], "i: ", i, "j: ", j)
 		}
 	}
 	return mtx
 }
 
-func matMulSeq(m1, m2 [][]float32) [][]float32 {
-	out := make([][]float32, len(m1))
+func matMulSeq(m1, m2 [][]float64) [][]float64 {
+	out := make([][]float64, len(m1))
 	// fmt.Println(len(m1))
 
 	for i := range out {
-		out[i] = make([]float32, len(m1[0]))
+		out[i] = make([]float64, len(m1[0]))
 	}
 
 	for i := 0; i < len(m1); i++ {
@@ -96,10 +100,10 @@ func matMulSeq(m1, m2 [][]float32) [][]float32 {
 	return out
 }
 
-func matMulDist(m1, m2 [][]float32) [][]float32 {
-	out := make([][]float32, len(m1))
+func matMulDist(m1, m2 [][]float64) [][]float64 {
+	out := make([][]float64, len(m1))
 	for i := range out {
-		out[i] = make([]float32, len(m1))
+		out[i] = make([]float64, len(m1))
 	}
 	// important to use an index like this since
 	// we dont know when the math will finish
@@ -107,15 +111,15 @@ func matMulDist(m1, m2 [][]float32) [][]float32 {
 	// it will be in the right place later
 	element := make(chan struct {
 		i    int
-		data []float32
+		data []float64
 	}, len(m1))
 
 	for i := 0; i < len(m1); i++ {
-		// element := make(chan []float32)
+		// element := make(chan []float64)
 		// go getMatMulRow(m1, m2, i, element)
 
 		go func(i int) {
-			out := make([]float32, len(m1))
+			out := make([]float64, len(m1))
 			for j := 0; j < len(m1); j++ {
 				for k := 0; k < len(m1); k++ {
 					out[j] += m1[i][k] * m2[k][j]
@@ -123,7 +127,7 @@ func matMulDist(m1, m2 [][]float32) [][]float32 {
 			}
 			element <- struct {
 				i    int
-				data []float32
+				data []float64
 			}{i: i, data: out}
 		}(i)
 	}
@@ -134,8 +138,8 @@ func matMulDist(m1, m2 [][]float32) [][]float32 {
 	return out
 }
 
-// func getMatMulRow(m1, m2 [][]float32, i int, element chan<- []float32) {
-// 	out := make([]float32, len(m1))
+// func getMatMulRow(m1, m2 [][]float64, i int, element chan<- []float64) {
+// 	out := make([]float64, len(m1))
 // 	for j := 0; j < len(m1); j++ {
 // 		for k := 0; k < len(m1); k++ {
 // 			out[j] += m1[i][k] * m2[k][j]
@@ -144,7 +148,7 @@ func matMulDist(m1, m2 [][]float32) [][]float32 {
 // 	element <- out
 // }
 
-func checkMatMul(out1, out2 [][]float32) bool {
+func checkMatMul(out1, out2 [][]float64) bool {
 	size := len(out1)
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
@@ -155,4 +159,91 @@ func checkMatMul(out1, out2 [][]float32) bool {
 		}
 	}
 	return true
+}
+
+func runTests(amount, increment, start int) []struct {
+	run      int
+	size     int
+	seqTime  time.Duration
+	distTime time.Duration
+} {
+	out := make([]struct {
+		run      int
+		size     int
+		seqTime  time.Duration
+		distTime time.Duration
+	}, amount+1)
+
+	for run := 1; run < amount+1; run++ {
+		size := start + increment*run
+		mtx1 := genMtx(size)
+		mtx2 := genMtx(size)
+
+		fmt.Println("run:", run, "size:", len(mtx1))
+		// fmt.Println(len(mtx2))
+		// fmt.Println("first line:", matrix2[0][0])
+		beforeSeq := time.Now()
+		mtxoutSeq := matMulSeq(mtx1, mtx2)
+		afterSeq := time.Since(beforeSeq)
+
+		fmt.Println("sequential done:", afterSeq)
+
+		beforeDist := time.Now()
+		mtxoutDist := matMulDist(mtx1, mtx2)
+		afterDist := time.Since(beforeDist)
+
+		fmt.Println("distributed done:", afterDist)
+		fmt.Println("check?: ", checkMatMul(mtxoutDist, mtxoutSeq))
+
+		out[run] = struct {
+			run      int
+			size     int
+			seqTime  time.Duration
+			distTime time.Duration
+		}{run, size, afterSeq, afterDist}
+	}
+	fmt.Println("Done.")
+	return out
+}
+
+func printResults(result []struct {
+	run      int
+	size     int
+	seqTime  time.Duration
+	distTime time.Duration
+}) {
+	graph := chart.Chart{
+		XAxis: chart.XAxis{
+			Name: "Matrix Size",
+		},
+		YAxis: chart.YAxis{
+			Name: "Time (ns)",
+		},
+		Series: []chart.Series{},
+	}
+
+	seqSeries := chart.ContinuousSeries{
+		Name:    "Sequential Time",
+		XValues: []float64{},
+		YValues: []float64{},
+	}
+
+	distSeries := chart.ContinuousSeries{
+		Name:    "Distributed Time",
+		XValues: []float64{},
+		YValues: []float64{},
+	}
+
+	for _, res := range result {
+		seqSeries.XValues = append(seqSeries.XValues, float64(res.size))
+		seqSeries.YValues = append(seqSeries.YValues, float64(res.seqTime.Nanoseconds()))
+		distSeries.XValues = append(distSeries.XValues, float64(res.size))
+		distSeries.YValues = append(distSeries.YValues, float64(res.distTime.Nanoseconds()))
+	}
+
+	graph.Series = append(graph.Series, seqSeries, distSeries)
+
+	f, _ := os.Create("output64.png")
+	defer f.Close()
+	graph.Render(chart.PNG, f)
 }
