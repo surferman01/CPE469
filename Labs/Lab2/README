@@ -1,0 +1,13 @@
+Ben Soto and Avery White
+String Search Lab
+
+Execution:
+    Simple run once
+    $ go run ./strSearch.go
+
+    Test different chunk sizes by adding any command line argument(s)
+    $ go run ./strSearch.go only checks command line length greater than 1
+
+The testing option will check numerous chunk sizes and checks which chunk size (amount of lines to process per goroutine) 
+has the best speed increase from the sequential code.
+On my machine, I wasn't seeing a consistent one chunk size that was better than the rest, so I set the default to 20 line chunks. 

@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
 type Test struct {
 	run      int
 	name     string
-	val      int
+	seqVal   int
+	distVal  int
 	seqTime  time.Duration
 	distTime time.Duration
 }
@@ -23,65 +25,33 @@ func main() {
 	amount := 1
 	text := []string{"complete_sherlock.txt", "input"}
 	s := "The"
+	chunkSize := 20
+
 	// --------------------
 
-	out := run_tests(amount, text, s)
+	if len(os.Args) > 1 {
+		bestSize := 5
+		var bestSpeedUp float64 = 1
+		for chunkSize := 5; chunkSize < 31; chunkSize++ {
+			fmt.Printf("Chunk Size: %d\n", chunkSize)
 
-	fmt.Println("seq:", out[0].seqTime, "dist:", out[0].distTime, "val:", out[0].val)
-	// s := "test"
+			out := run_tests(amount, text, s, chunkSize)
 
-	// data, err := os.ReadFile("input")
-	// if err != nil {
-	// 	fmt.Println("Error reading input")
-	// 	return
-	// }
+			fmt.Println("seq:", out[0].seqTime, "dist:", out[0].distTime, "seqVal:", out[0].seqVal, "distVal: ", out[0].distVal)
 
-	// asStr := string(data)
+			var currTime float64 = float64(time.Duration(out[0].seqTime)) / float64(time.Duration(out[0].distTime))
+			if currTime > bestSpeedUp {
+				bestSpeedUp = float64(currTime)
+				bestSize = chunkSize
+			}
+		}
 
-	// out := strings.Split(asStr, " ")
+		fmt.Printf("\nBest chunk size: %d\n", bestSize)
+	} else {
+		out := run_tests(amount, text, s, chunkSize)
 
-	// counter := 0
-	// for i := 0; i < len(out); i++ {
-	// 	if s == out[i] {
-	// 		counter++
-	// 	}
-	// 	fmt.Println(s, "S HERE")
-	// 	fmt.Println(out[i])
-	// }
-
-	// fmt.Println(counter)
-
-	// fmt.Println(out)
-
-	// BUFIO / SCANNER implementation
-
-	// fmt.Println(seq_strSearch("complete_sherlock.txt", "test"))
-	// data, err := os.Open("input")
-	// // fmt.Println(os.ReadFile("input"))
-	// if err != nil {
-	// 	fmt.Println("Error reading input")
-	// 	return
-	// }
-	// defer data.Close()
-
-	// counter := 0
-	// s := "test"
-	// scanner := bufio.NewScanner(data)
-	// for scanner.Scan() {
-	// 	line := scanner.Text()
-	// 	out := strings.Split(line, " ")
-	// 	for i := 0; i < len(out); i++ {
-	// 		fmt.Println(out[i])
-	// 		if out[i] == s {
-	// 			counter++
-	// 		}
-	// 	}
-	// }
-	// fmt.Println(counter)
-	// fmt.Println(s)
-	// for i := 0; i < len(data.); i++ {
-
-	// }
+		fmt.Println("seq:", out[0].seqTime, "dist:", out[0].distTime, "seqVal:", out[0].seqVal, "distVal: ", out[0].distVal)
+	}
 }
 
 func seq_strSearch(name, s string) int {
@@ -107,13 +77,95 @@ func seq_strSearch(name, s string) int {
 	return counter
 }
 
-func dist_strSearch(name, s string) int {
+func dist_strSearch(name, s string, chunkSize int) int {
+	// Open the file
+	data, err := os.Open(name)
+	if err != nil {
+		fmt.Println("Error reading input")
+		return 0
+	}
+	defer data.Close()
 
-	// TODO
-	return 0
+	// Wait group for goroutines processing file chunks
+	var wg sync.WaitGroup
+
+	// Wait group for accumulator goroutine
+	var accWG sync.WaitGroup
+
+	// Start a goroutine to accumulate results
+	total := 0
+	buff := make(chan int, 1000)
+	accWG.Add(1)
+	go func() {
+		defer accWG.Done()
+		for count := range buff {
+			total += count
+		}
+	}()
+
+	// Read file line by line
+	scanner := bufio.NewScanner(data)
+	lines := make([]string, 0, chunkSize)
+
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+
+		// Collect chunks
+		if len(lines) == chunkSize {
+			wg.Add(1)
+			chunk := append([]string{}, lines...) // Copy lines buffer
+			lines = lines[:0]                     // Reset lines buffer
+
+			// Search chunk for string
+			go func(chunk []string) {
+				defer wg.Done()
+				counter := 0
+				for _, line := range chunk {
+					for _, word := range strings.Fields(line) {
+						if word == s {
+							counter++
+						}
+					}
+				}
+				// Only send data if str is found
+				if counter > 0 {
+					buff <- counter
+				}
+			}(chunk)
+		}
+	}
+
+	// Edge case for any remaining lines in the buffer
+	if len(lines) > 0 {
+		wg.Add(1)
+		chunk := append([]string{}, lines...)
+		go func(chunk []string) {
+			defer wg.Done()
+			counter := 0
+			for _, line := range chunk {
+				for _, word := range strings.Fields(line) {
+					if word == s {
+						counter++
+					}
+				}
+			}
+			buff <- counter
+		}(chunk)
+	}
+
+	// Wait for string search goroutines
+	wg.Wait()
+
+	// Close the channel
+	close(buff)
+
+	// Wait for the accumulating goroutine
+	accWG.Wait()
+
+	return total
 }
 
-func run_tests(amount int, text []string, s string) []Test {
+func run_tests(amount int, text []string, s string, chunkSize int) []Test {
 	out := make([]Test, amount)
 
 	if amount > len(text) {
@@ -138,7 +190,7 @@ func run_tests(amount int, text []string, s string) []Test {
 		out[run].seqTime = sinceSeq
 
 		beforeDist := time.Now()
-		dist_srch := dist_strSearch(name, s)
+		dist_srch := dist_strSearch(name, s, chunkSize)
 		sinceDist := time.Since(beforeDist)
 
 		out[run].distTime = sinceDist
@@ -150,7 +202,8 @@ func run_tests(amount int, text []string, s string) []Test {
 			// return nil
 		}
 		// val is the number of findings
-		out[run].val = dist_srch
+		out[run].distVal = dist_srch
+		out[run].seqVal = seq_srch
 	}
 	return out
 }
