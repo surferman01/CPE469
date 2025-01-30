@@ -17,30 +17,34 @@ const (
 	MAX_NODES  = 8
 	X_TIME     = 1
 	Y_TIME     = 2
-	Z_TIME_MAX = 100
+	Z_TIME_MAX = 20
 	Z_TIME_MIN = 10
 )
 
 var self_node shared.Node
 
 // Send the current membership table to a neighboring node with the provided ID
-func sendMessage(server rpc.Client, id int, membership shared.Membership) {
+func sendMessage(server *rpc.Client, id int, membership shared.Membership) {
 	// i think this is kinda what we want:
 	// send a request for membership table, then see
 	// if it worked or not?
 	req := shared.Request{ID: id, Table: membership}
 	var reply *bool
 	server.Call("Requests.Add", req, &reply)
-	fmt.Printf("add request: %d\n", reply)
+	fmt.Println("add request:", *reply)
 }
 
 // Read incoming messages from other nodes
-func readMessages(server rpc.Client, id int, membership shared.Membership) *shared.Membership {
+func readMessages(server *rpc.Client, id int, membership shared.Membership) *shared.Membership {
 	//TODO
 	// not sure what exactly we want to do here
 	// also not sure if the out := was written by me or provided
 	// (i commonly use 'out' though so not sure)
 	out := *shared.NewMembership()
+	req := shared.Request{ID: id, Table: membership}
+	var reply *shared.Membership
+	server.Call("Requests.Listen", req, &reply)
+	fmt.Println("REPLY", *reply)
 	return &out
 }
 
@@ -52,8 +56,8 @@ func calcTime() float64 {
 
 var wg = &sync.WaitGroup{}
 
-func clientmain() {
-	rand.Seed(time.Now().UnixNano())
+func main() {
+	// rand.Seed(time.Now().UnixNano())
 	Z_TIME := rand.Intn(Z_TIME_MAX-Z_TIME_MIN) + Z_TIME_MIN
 
 	// Connect to RPC server
@@ -91,7 +95,7 @@ func clientmain() {
 	membership := shared.NewMembership()
 	membership.Add(self_node, &self_node)
 
-	sendMessage(*server, neighbors[0], *membership)
+	sendMessage(server, neighbors[0], *membership)
 
 	// crashTime := self_node.CrashTime()
 
@@ -104,14 +108,45 @@ func clientmain() {
 }
 
 func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Membership, id int) {
-	//TODO
+	fmt.Println("runAfterX NOW 1")
+
+	// Increment the heartbeat counter
+	node.Hbcounter++
+
+	// Update the node's time
+	node.Time = calcTime()
+
+	// Send the updated node information to the membership table
+	if err := server.Call("Membership.Update", *node, nil); err != nil {
+		fmt.Println("Error: Membership.Update()", err)
+	} else {
+		fmt.Printf("Success: Node %d updated\n", id)
+	}
+
+	// Print the current membership table
+	printMembership(**membership)
+
+	// THIS READMESSAGES IS BROKEN HERE
+
+	temp := readMessages(server, id, **membership)
+	fmt.Println(temp)
+
+	// Schedule the next runAfterX call
+	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, node, membership, id) })
+
 }
 
 func runAfterY(server *rpc.Client, neighbors [2]int, membership **shared.Membership, id int) {
 	//TODO
+	fmt.Println("runAfterY NOW 2")
+	// send a heartbeat to a randomly selected neighbor of yours
+	sel := rand.Intn(2)
+	sendMessage(server, neighbors[sel], **membership)
 }
 
 func runAfterZ(server *rpc.Client, id int) {
+	// this will listening for others
+	// readMessages(*server, id, )
 	//TODO
 }
 

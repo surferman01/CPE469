@@ -1,7 +1,6 @@
 package shared
 
 import (
-	// "fmt"
 	"fmt"
 	"math/rand"
 	"time"
@@ -10,7 +9,7 @@ import (
 )
 
 const (
-	MAX_NODES = 8
+	MAX_NODES = 3
 )
 
 // Node struct represents a computing node.
@@ -42,7 +41,7 @@ func (n Node) InitializeNeighbors(id int) [2]int {
 }
 
 func RandInt() int {
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed(time.Now().UnixNano())
 	return rand.Intn(MAX_NODES-1+1) + 1
 }
 
@@ -120,19 +119,23 @@ func (req *Requests) Listen(ID int, reply *Membership) error {
 func combineTables(table1 *Membership, table2 *Membership) *Membership {
 	combined := NewMembership()
 
+
 	for id, node := range table1.Members {
 		combined.Members[id] = node
 	}
-
 	for id, node := range table2.Members {
-		if existingNode, exists := combined.Members[id]; exists {
-			if node.Time > existingNode.Time {
-				combined.Members[id] = node
-			}
-		} else {
-			combined.Members[id] = node
-		}
+		combined.Members[id] = node
 	}
+
+	// for id, node := range table2.Members {
+	// 	if existingNode, exists := combined.Members[id]; exists {
+	// 		if node.Time > existingNode.Time {
+	// 			combined.Members[id] = node
+	// 		}
+	// 	} else {
+	// 		combined.Members[id] = node
+	// 	}
+	// }
 
 	return combined
 }
