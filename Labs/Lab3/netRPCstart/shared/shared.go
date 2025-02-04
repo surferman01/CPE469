@@ -61,9 +61,9 @@ func NewMembership() *Membership {
 
 // Adds a node to the membership list.
 func (m *Membership) Add(payload Node, reply *Node) error {
-	if _, exists := m.Members[payload.ID]; exists {
-		return fmt.Errorf("Node with ID %d already exists", payload.ID)
-	}
+	// if _, exists := m.Members[payload.ID]; exists {
+	// 	return fmt.Errorf("Node with ID %d already exists", payload.ID)
+	// }
 
 	m.Members[payload.ID] = payload
 	*reply = payload
@@ -72,9 +72,9 @@ func (m *Membership) Add(payload Node, reply *Node) error {
 
 // Updates a node in the membership list.
 func (m *Membership) Update(payload Node, reply *Node) error {
-	if _, exists := m.Members[payload.ID]; !exists {
-		return fmt.Errorf("Node with ID %d doesn't exist", payload.ID)
-	}
+	// if _, exists := m.Members[payload.ID]; !exists {
+	// 	return fmt.Errorf("Node with ID %d doesn't exist", payload.ID)
+	// }
 
 	m.Members[payload.ID] = payload
 	*reply = payload
@@ -121,15 +121,16 @@ func (req *Requests) Add(payload Request, reply *bool) error {
 // Listens to communication from neighboring nodes.
 func (req *Requests) Listen(ID int, reply *Membership) error {
 	if table, exists := req.Pending[ID]; exists {
-		combined := combineTables(&table, reply)
-		*reply = *combined
+		// combined := combineTables(&table, reply)
+		*reply = table
 		delete(req.Pending, ID)
 		return nil
 	}
-	return fmt.Errorf("no pending request with ID %d", ID)
+	// return fmt.Errorf("no pending request with ID %d", ID)
+	return nil
 }
 
-func combineTables(table1 *Membership, table2 *Membership) *Membership {
+func CombineTables(table1 *Membership, table2 *Membership) *Membership {
 	combined := NewMembership()
 
 	for id, node := range table1.Members {

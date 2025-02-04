@@ -47,7 +47,10 @@ func readMessages(server *rpc.Client, id int, membership shared.Membership) *sha
 		fmt.Println("REPLY", *reply)
 	}
 
-	return reply
+	// combine memberships here
+	// local + reply
+
+	return shared.CombineTables(&membership, reply)
 }
 
 func calcTime() float64 {
@@ -108,13 +111,15 @@ func main() {
 }
 
 func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Membership, id int) {
-	fmt.Println("runAfterX NOW 1")
+	// fmt.Println("runAfterX NOW 1")
 
 	// Increment the heartbeat counter
 	node.Hbcounter++
 
 	// Update the node's time
 	node.Time = calcTime()
+	// (*membership).Update(*node, nil)
+	(*membership).Members[id] = *node
 
 	// Send the updated node information to the server membership table
 	if err := server.Call("Membership.Update", *node, nil); err != nil {
@@ -131,6 +136,9 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 		*membership = temp
 	}
 
+	// temp is now updated membership
+	// now update membership 
+
 	// Schedule the next runAfterX call
 	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, node, membership, id) })
 }
@@ -138,7 +146,7 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 func runAfterY(server *rpc.Client, neighbors [2]int, membership **shared.Membership, id int) {
 	//TODO
 	sel := rand.Intn(2)
-	fmt.Println("runAfterY NOW 2 with sel:", sel)
+	// fmt.Println("runAfterY NOW 2 with sel:", sel)
 	// send a heartbeat to a randomly selected neighbor of yours
 	sendMessage(server, neighbors[sel], **membership)
 
