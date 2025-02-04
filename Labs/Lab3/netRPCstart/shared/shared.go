@@ -61,18 +61,32 @@ func NewMembership() *Membership {
 
 // Adds a node to the membership list.
 func (m *Membership) Add(payload Node, reply *Node) error {
+	if _, exists := m.Members[payload.ID]; exists {
+		return fmt.Errorf("Node with ID %d already exists", payload.ID)
+	}
+
 	m.Members[payload.ID] = payload
+	*reply = payload
 	return nil
 }
 
 // Updates a node in the membership list.
 func (m *Membership) Update(payload Node, reply *Node) error {
+	if _, exists := m.Members[payload.ID]; !exists {
+		return fmt.Errorf("Node with ID %d doesn't exist", payload.ID)
+	}
+
 	m.Members[payload.ID] = payload
+	*reply = payload
 	return nil
 }
 
 // Returns a node with specific ID.
 func (m *Membership) Get(payload int, reply *Node) error {
+	if _, exists := m.Members[payload]; !exists {
+		return fmt.Errorf("Node with ID %d doesn't exist", payload)
+	}
+
 	*reply = m.Members[payload]
 	return nil
 }
@@ -104,45 +118,33 @@ func (req *Requests) Add(payload Request, reply *bool) error {
 	return nil
 }
 
-// idk if this works...
 // Listens to communication from neighboring nodes.
 func (req *Requests) Listen(ID int, reply *Membership) error {
 	if table, exists := req.Pending[ID]; exists {
-		*reply = *combineTables(&table, reply)
+		combined := combineTables(&table, reply)
+		*reply = *combined
 		delete(req.Pending, ID)
 		return nil
 	}
 	return fmt.Errorf("no pending request with ID %d", ID)
 }
 
-// idk if this works...
 func combineTables(table1 *Membership, table2 *Membership) *Membership {
 	combined := NewMembership()
-
 
 	for id, node := range table1.Members {
 		combined.Members[id] = node
 	}
-	for id, node := range table2.Members {
-		combined.Members[id] = node
-	}
 
-	// for id, node := range table2.Members {
-	// 	if existingNode, exists := combined.Members[id]; exists {
-	// 		if node.Time > existingNode.Time {
-	// 			combined.Members[id] = node
-	// 		}
-	// 	} else {
-	// 		combined.Members[id] = node
-	// 	}
-	// }
+	for id, node := range table2.Members {
+		if existingNode, exists := combined.Members[id]; exists {
+			if node.Time > existingNode.Time {
+				combined.Members[id] = node
+			}
+		} else {
+			combined.Members[id] = node
+		}
+	}
 
 	return combined
 }
-
-// func combineTables(table1 *Membership, table2 *Membership) *Membership {
-// 	// to combine the tables, we need to compare the
-// 	for i := 0; i < len(table1.Members); i++ {
-
-// 	}
-// }

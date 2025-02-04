@@ -2,9 +2,9 @@ package main
 
 import (
 	"io"
-	"gossipHBP/netRPCstart/shared"
 	"net/http"
 	"net/rpc"
+	"netRPCstart/shared"
 )
 
 func main() {

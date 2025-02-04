@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"gossipHBP/netRPCstart/shared"
 	"math/rand"
 	"net/rpc"
+	"netRPCstart/shared"
 	"os"
 	"strconv"
 
@@ -25,33 +25,33 @@ var self_node shared.Node
 
 // Send the current membership table to a neighboring node with the provided ID
 func sendMessage(server *rpc.Client, id int, membership shared.Membership) {
-	// i think this is kinda what we want:
-	// send a request for membership table, then see
-	// if it worked or not?
 	req := shared.Request{ID: id, Table: membership}
 	var reply *bool
-	server.Call("Requests.Add", req, &reply)
-	fmt.Println("add request:", *reply)
+
+	err := server.Call("Requests.Add", req, &reply)
+	if err != nil {
+		fmt.Println("Error in sendMessage:", err)
+	} else {
+		fmt.Println("add request:", reply)
+	}
 }
 
 // Read incoming messages from other nodes
 func readMessages(server *rpc.Client, id int, membership shared.Membership) *shared.Membership {
-	//TODO
-	// not sure what exactly we want to do here
-	// also not sure if the out := was written by me or provided
-	// (i commonly use 'out' though so not sure)
-	out := *shared.NewMembership()
-	req := shared.Request{ID: id, Table: membership}
 	var reply *shared.Membership
-	server.Call("Requests.Listen", req, &reply)
-	fmt.Println("REPLY", *reply)
-	return &out
+
+	err := server.Call("Requests.Listen", id, &reply)
+	if err != nil {
+		fmt.Println("Error in readMessages:", err)
+	} else {
+		fmt.Println("REPLY", *reply)
+	}
+
+	return reply
 }
 
 func calcTime() float64 {
-	//TODO
-	out := float64(rand.Float64())
-	return out
+	return float64(time.Now().Unix())
 }
 
 var wg = &sync.WaitGroup{}
@@ -116,7 +116,7 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 	// Update the node's time
 	node.Time = calcTime()
 
-	// Send the updated node information to the membership table
+	// Send the updated node information to the server membership table
 	if err := server.Call("Membership.Update", *node, nil); err != nil {
 		fmt.Println("Error: Membership.Update()", err)
 	} else {
@@ -126,14 +126,13 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 	// Print the current membership table
 	printMembership(**membership)
 
-	// THIS READMESSAGES IS BROKEN HERE
-
 	temp := readMessages(server, id, **membership)
-	fmt.Println(temp)
+	if temp != nil {
+		*membership = temp
+	}
 
 	// Schedule the next runAfterX call
 	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, node, membership, id) })
-
 }
 
 func runAfterY(server *rpc.Client, neighbors [2]int, membership **shared.Membership, id int) {
@@ -148,6 +147,8 @@ func runAfterZ(server *rpc.Client, id int) {
 	// this will listening for others
 	// readMessages(*server, id, )
 	//TODO
+	fmt.Println("Node", id, "crashed!")
+	os.Exit(0)
 }
 
 func printMembership(m shared.Membership) {
