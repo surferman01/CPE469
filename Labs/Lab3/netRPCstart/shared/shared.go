@@ -139,7 +139,7 @@ func CombineTables(table1 *Membership, table2 *Membership) *Membership {
 
 	for id, node := range table2.Members {
 		if existingNode, exists := combined.Members[id]; exists {
-			if node.Time > existingNode.Time {
+			if node.Hbcounter > existingNode.Hbcounter {
 				combined.Members[id] = node
 			}
 		} else {

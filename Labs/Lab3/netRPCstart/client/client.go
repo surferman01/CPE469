@@ -31,8 +31,8 @@ func sendMessage(server *rpc.Client, id int, membership shared.Membership) {
 	err := server.Call("Requests.Add", req, &reply)
 	if err != nil {
 		fmt.Println("Error in sendMessage:", err)
-	} else {
-		fmt.Println("add request:", reply)
+	// } else {
+	// 	fmt.Println("add request:", reply)
 	}
 }
 
@@ -43,8 +43,8 @@ func readMessages(server *rpc.Client, id int, membership shared.Membership) *sha
 	err := server.Call("Requests.Listen", id, &reply)
 	if err != nil {
 		fmt.Println("Error in readMessages:", err)
-	} else {
-		fmt.Println("REPLY", *reply)
+	// } else {
+	// 	fmt.Println("REPLY", *reply)
 	}
 
 	// combine memberships here
@@ -138,6 +138,14 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 
 	// temp is now updated membership
 	// now update membership 
+	cur_time := calcTime()
+	for id, n := range (**membership).Members {
+		if (cur_time - n.Time > 4) {
+			t := (**membership).Members[id]
+			t.Alive = false
+			(**membership).Members[id] = t
+		}
+	}
 
 	// Schedule the next runAfterX call
 	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, node, membership, id) })
