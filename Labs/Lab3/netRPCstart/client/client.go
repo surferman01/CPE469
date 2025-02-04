@@ -137,10 +137,12 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 
 func runAfterY(server *rpc.Client, neighbors [2]int, membership **shared.Membership, id int) {
 	//TODO
-	fmt.Println("runAfterY NOW 2")
-	// send a heartbeat to a randomly selected neighbor of yours
 	sel := rand.Intn(2)
+	fmt.Println("runAfterY NOW 2 with sel:", sel)
+	// send a heartbeat to a randomly selected neighbor of yours
 	sendMessage(server, neighbors[sel], **membership)
+
+	time.AfterFunc(time.Second*Y_TIME, func() { runAfterY(server, neighbors, membership, id) })
 }
 
 func runAfterZ(server *rpc.Client, id int) {
