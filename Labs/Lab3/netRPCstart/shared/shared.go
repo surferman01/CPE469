@@ -3,13 +3,13 @@ package shared
 import (
 	"fmt"
 	"math/rand"
-	"time"
+	// "time"
 	// "net/http"
 	// "net/rpc"
 )
 
 const (
-	MAX_NODES = 3
+	MAX_NODES = 5
 )
 
 // Node struct represents a computing node.
@@ -22,7 +22,7 @@ type Node struct {
 
 // Generate random crash time from 10-60 seconds
 func (n Node) CrashTime() int {
-	rand.Seed(time.Now().UnixNano())
+	// rand.Seed(time.Now().UnixNano())
 	max := 60
 	min := 10
 	return rand.Intn(max-min) + min

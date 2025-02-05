@@ -17,9 +17,11 @@ const (
 	MAX_NODES  = 8
 	X_TIME     = 1
 	Y_TIME     = 2
-	Z_TIME_MAX = 20
-	Z_TIME_MIN = 10
+	Z_TIME_MAX = 120
+	Z_TIME_MIN = 30
 )
+
+var repeats = [MAX_NODES + 1]int{}
 
 var self_node shared.Node
 
@@ -31,8 +33,8 @@ func sendMessage(server *rpc.Client, id int, membership shared.Membership) {
 	err := server.Call("Requests.Add", req, &reply)
 	if err != nil {
 		fmt.Println("Error in sendMessage:", err)
-	// } else {
-	// 	fmt.Println("add request:", reply)
+		// } else {
+		// 	fmt.Println("add request:", reply)
 	}
 }
 
@@ -43,8 +45,8 @@ func readMessages(server *rpc.Client, id int, membership shared.Membership) *sha
 	err := server.Call("Requests.Listen", id, &reply)
 	if err != nil {
 		fmt.Println("Error in readMessages:", err)
-	// } else {
-	// 	fmt.Println("REPLY", *reply)
+		// } else {
+		// 	fmt.Println("REPLY", *reply)
 	}
 
 	// combine memberships here
@@ -131,21 +133,49 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 	// Print the current membership table
 	printMembership(**membership)
 
-	temp := readMessages(server, id, **membership)
-	if temp != nil {
-		*membership = temp
+	new_membership := readMessages(server, id, **membership)
+	if new_membership != nil {
+		for _, n := range (*membership).Members {
+			if n.ID == id {
+				continue
+			}
+			tempNode := new_membership.Members[n.ID]
+
+			if (*membership).Members[n.ID].Hbcounter == new_membership.Members[n.ID].Hbcounter {
+				repeats[n.ID]++
+				// if the heartbeat is the same for 20 checks,
+				// then assume it has died
+				if repeats[n.ID] >= 20 {
+					tempNode.Alive = false
+					new_membership.Members[n.ID] = tempNode
+				}
+			} else {
+				repeats[n.ID] = 0
+				tempNode.Alive = true
+				new_membership.Members[n.ID] = tempNode
+			}
+		}
+		*membership = new_membership
 	}
 
 	// temp is now updated membership
-	// now update membership 
-	cur_time := calcTime()
-	for id, n := range (**membership).Members {
-		if (cur_time - n.Time > 4) {
-			t := (**membership).Members[id]
-			t.Alive = false
-			(**membership).Members[id] = t
-		}
-	}
+	// now update membership
+
+	// below is another method of checking for a node being dead
+	// if the timestamp has not updated on the node in x time
+	// then assume it is dead
+	// this could be used in conjunction with the checking of
+	// equivalent heartbeats for further status checking
+
+	// cur_time := calcTime()
+	// for id, n := range (**membership).Members {
+	// 	if cur_time-n.Time > 20 {
+	// 		t := (**membership).Members[id]
+	// 		t.Alive = false
+	// 		(**membership).Members[id] = t
+	// 	}
+	// }
+
 
 	// Schedule the next runAfterX call
 	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, node, membership, id) })
@@ -178,4 +208,7 @@ func printMembership(m shared.Membership) {
 		fmt.Printf("Node %d has hb %d, time %.1f and %s\n", val.ID, val.Hbcounter, val.Time, status)
 	}
 	fmt.Println("")
+	fmt.Println("repeats", repeats)
+	fmt.Println("")
+
 }
