@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	MAX_NODES = 5
+	MAX_NODES = 8
 )
 
 // Node struct represents a computing node.
