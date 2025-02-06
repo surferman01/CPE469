@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/rpc"
-	"netRPCstart/shared"
+	"netRPCGossip/shared"
 	"os"
 	"strconv"
 
@@ -106,7 +106,7 @@ func main() {
 
 	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, &self_node, &membership, id) })
 	time.AfterFunc(time.Second*Y_TIME, func() { runAfterY(server, neighbors, &membership, id) })
-	time.AfterFunc(time.Second*time.Duration(Z_TIME), func() { runAfterZ(server, id) })
+	time.AfterFunc(time.Second*time.Duration(Z_TIME), func() { runAfterZ(id) })
 
 	wg.Add(1)
 	wg.Wait()
@@ -176,7 +176,6 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 	// 	}
 	// }
 
-
 	// Schedule the next runAfterX call
 	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, node, membership, id) })
 }
@@ -191,7 +190,7 @@ func runAfterY(server *rpc.Client, neighbors [2]int, membership **shared.Members
 	time.AfterFunc(time.Second*Y_TIME, func() { runAfterY(server, neighbors, membership, id) })
 }
 
-func runAfterZ(server *rpc.Client, id int) {
+func runAfterZ(id int) {
 	// this will listening for others
 	// readMessages(*server, id, )
 	//TODO

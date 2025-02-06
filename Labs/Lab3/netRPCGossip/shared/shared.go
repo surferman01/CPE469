@@ -42,7 +42,7 @@ func (n Node) InitializeNeighbors(id int) [2]int {
 
 func RandInt() int {
 	// rand.Seed(time.Now().UnixNano())
-	return rand.Intn(MAX_NODES-1+1) + 1
+	return rand.Intn(MAX_NODES) + 1
 }
 
 /*---------------*/

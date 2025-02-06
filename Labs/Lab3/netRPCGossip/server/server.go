@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/rpc"
-	"netRPCstart/shared"
+	"netRPCGossip/shared"
 )
 
 func main() {
