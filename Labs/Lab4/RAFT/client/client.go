@@ -15,7 +15,6 @@ import (
 )
 
 const (
-	MAX_NODES     = 3
 	X_TIME        = 1
 	Y_TIME        = 2
 	Z_TIME_MAX    = 120
@@ -23,7 +22,7 @@ const (
 	ElectionCount = 10
 )
 
-var repeats = [MAX_NODES + 1]int{}
+var repeats = [shared.MAX_NODES + 1]int{}
 
 var self_node shared.Node
 
