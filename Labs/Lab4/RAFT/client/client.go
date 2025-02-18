@@ -242,7 +242,7 @@ func VoteRequest(server *rpc.Client, n *shared.Node, src_ID int, membership shar
 
 	fmt.Println("Sending Vote...")
 	sendMessage(server, src_ID, membership, elect)
-	n.ElectionTimer = ElectionCount
+	n.ElectionTimer = 15
 }
 
 func CountVote(server *rpc.Client, n *shared.Node, membership *shared.Membership) {

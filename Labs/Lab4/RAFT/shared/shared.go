@@ -127,30 +127,35 @@ type Request struct {
 // Requests struct represents pending message requests
 type Requests struct {
 	GossipPending map[int]Membership
-	RAFTPending   map[int]ElectionMSG
+	RAFTPending   map[int][]ElectionMSG
 }
 
 // Reply struct for gossip and RAFT
 type Reply struct {
 	Table    Membership
-	Election ElectionMSG
+	Election []ElectionMSG
 }
 
 // Returns a new instance of a Membership (pointer).
 func NewRequests() *Requests {
 	return &Requests{
 		GossipPending: make(map[int]Membership),
-		RAFTPending:   make(map[int]ElectionMSG),
+		RAFTPending:   make(map[int][]ElectionMSG),
 	}
 }
 
 // Adds a new message request to the pending list
 func (req *Requests) Add(payload Request, reply *bool) error {
 	req.GossipPending[payload.ID] = payload.Table
+
 	// Only add election request if request isn't blank
 	if payload.Election.MSG != "" {
-		req.RAFTPending[payload.ID] = payload.Election
+		if req.RAFTPending[payload.ID] == nil {
+			req.RAFTPending[payload.ID] = make([]ElectionMSG, 0)
+		}
+		req.RAFTPending[payload.ID] = append(req.RAFTPending[payload.ID], payload.Election)
 	}
+
 	*reply = true
 	return nil
 }
