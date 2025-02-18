@@ -8,17 +8,34 @@ import (
 	// "net/rpc"
 )
 
+type Role int
+
 const (
-	MAX_NODES = 8
+	MAX_NODES      = 3
+	Follower  Role = iota
+	Candidate
+	Leader
+	START_ELECTION = "start"
+	VOTE           = "vote"
+	NEW_LEADER     = "IamUrLeader"
 )
 
 // Node struct represents a computing node.
 type Node struct {
-	ID        int
+	ID int
+
+	// Gossip vars
 	Hbcounter int
 	Time      float64
 	Alive     bool
-	Leader    bool
+
+	// Election vars
+	Role          Role
+	LeaderID      int
+	Term          int
+	ElectionTimer int
+	VotedFor      int
+	VoteCount     int
 }
 
 // Generate random crash time from 10-60 seconds
@@ -94,40 +111,61 @@ func (m *Membership) Get(payload int, reply *Node) error {
 
 /*---------------*/
 
+type ElectionMSG struct {
+	MSG    string
+	SRC_ID int
+}
+
 // Request struct represents a new message request to a client
 type Request struct {
-	ID    int
-	Table Membership
+	ID       int
+	Table    Membership
+	Election ElectionMSG
 }
 
 // Requests struct represents pending message requests
 type Requests struct {
-	Pending map[int]Membership
+	GossipPending map[int]Membership
+	RAFTPending   map[int]ElectionMSG
+}
+
+// Reply struct for gossip and RAFT
+type Reply struct {
+	Table    Membership
+	Election ElectionMSG
 }
 
 // Returns a new instance of a Membership (pointer).
 func NewRequests() *Requests {
 	return &Requests{
-		Pending: make(map[int]Membership),
+		GossipPending: make(map[int]Membership),
+		RAFTPending:   make(map[int]ElectionMSG),
 	}
 }
 
 // Adds a new message request to the pending list
 func (req *Requests) Add(payload Request, reply *bool) error {
-	req.Pending[payload.ID] = payload.Table
+	req.GossipPending[payload.ID] = payload.Table
+	// Only add election request if request isn't blank
+	if payload.Election.MSG != "" {
+		req.RAFTPending[payload.ID] = payload.Election
+	}
 	*reply = true
 	return nil
 }
 
 // Listens to communication from neighboring nodes.
-func (req *Requests) Listen(ID int, reply *Membership) error {
-	if table, exists := req.Pending[ID]; exists {
-		// combined := combineTables(&table, reply)
-		*reply = table
-		delete(req.Pending, ID)
-		return nil
+func (req *Requests) Listen(ID int, reply *Reply) error {
+	if table, exists := req.GossipPending[ID]; exists {
+		reply.Table = table
+		delete(req.GossipPending, ID)
 	}
-	// return fmt.Errorf("no pending request with ID %d", ID)
+
+	if elect, exists := req.RAFTPending[ID]; exists {
+		reply.Election = elect
+		delete(req.RAFTPending, ID)
+	}
+
 	return nil
 }
 

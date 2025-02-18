@@ -4,7 +4,8 @@ import (
 	"io"
 	"net/http"
 	"net/rpc"
-	"netRPCGossip/shared"
+
+	"raft/shared"
 )
 
 func main() {
