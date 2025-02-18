@@ -11,7 +11,7 @@ import (
 type Role int
 
 const (
-	MAX_NODES      = 3
+	MAX_NODES      = 8
 	Follower  Role = iota
 	Candidate
 	Leader
@@ -46,17 +46,17 @@ type Node struct {
 // 	return rand.Intn(max-min) + min
 // }
 
-func (n Node) InitializeNeighbors(id int) [2]int {
-	neighbor1 := RandInt()
-	for neighbor1 == id {
-		neighbor1 = RandInt()
-	}
-	neighbor2 := RandInt()
-	for neighbor1 == neighbor2 || neighbor2 == id {
-		neighbor2 = RandInt()
-	}
-	return [2]int{neighbor1, neighbor2}
-}
+// func (n Node) InitializeNeighbors(id int) [2]int {
+// 	neighbor1 := RandInt()
+// 	for neighbor1 == id {
+// 		neighbor1 = RandInt()
+// 	}
+// 	neighbor2 := RandInt()
+// 	for neighbor1 == neighbor2 || neighbor2 == id {
+// 		neighbor2 = RandInt()
+// 	}
+// 	return [2]int{neighbor1, neighbor2}
+// }
 
 func RandInt() int {
 	// rand.Seed(time.Now().UnixNano())
