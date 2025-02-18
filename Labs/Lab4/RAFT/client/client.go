@@ -48,17 +48,20 @@ func readMessages(server *rpc.Client, node *shared.Node, membership shared.Membe
 		fmt.Println("Error in readMessages:", err)
 	}
 
-	if reply.Election.MSG == shared.START_ELECTION && (reply.Election.Term > node.Term || node.VotedFor == 0) {
-		VoteRequest(server, node, reply.Election.SRC_ID, membership)
-	} else if reply.Election.MSG == shared.VOTE {
-		CountVote(server, node, &membership)
-	} else if reply.Election.MSG == shared.NEW_LEADER {
-		node.Term = reply.Election.Term
-		node.VotedFor = 0
-		fmt.Printf("Node %d is the leader for term %d\n", reply.Election.SRC_ID, node.Term)
-		node.LeaderID = reply.Election.SRC_ID
-		node.ElectionTimer = shared.RandInt() + 5
-		node.Role = shared.Follower
+	for i := 0; i < len(reply.Election); i++ {
+		if reply.Election[i].MSG == shared.START_ELECTION && (reply.Election[i].Term > node.Term || node.VotedFor == 0) {
+			VoteRequest(server, node, reply.Election[i].SRC_ID, membership)
+		} else if reply.Election[i].MSG == shared.VOTE {
+			CountVote(server, node, &membership)
+		} else if reply.Election[i].MSG == shared.NEW_LEADER {
+			node.Term = reply.Election[i].Term
+			node.VotedFor = 0
+			fmt.Printf("Node %d is the leader for term %d\n", reply.Election[i].SRC_ID, node.Term)
+			node.LeaderID = reply.Election[i].SRC_ID
+			node.ElectionTimer = shared.RandInt() + 5
+			node.Role = shared.Follower
+			break
+		}
 	}
 
 	return shared.CombineTables(&membership, &reply.Table)

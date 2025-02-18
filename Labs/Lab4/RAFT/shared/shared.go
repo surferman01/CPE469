@@ -151,7 +151,7 @@ func (req *Requests) Add(payload Request, reply *bool) error {
 	// Only add election request if request isn't blank
 	if payload.Election.MSG != "" {
 		if req.RAFTPending[payload.ID] == nil {
-			req.RAFTPending[payload.ID] = make([]ElectionMSG, 0)
+			req.RAFTPending[payload.ID] = make([]ElectionMSG, MAX_NODES)
 		}
 		req.RAFTPending[payload.ID] = append(req.RAFTPending[payload.ID], payload.Election)
 	}
