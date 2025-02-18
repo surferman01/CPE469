@@ -46,14 +46,17 @@ func readMessages(server *rpc.Client, node *shared.Node, membership shared.Membe
 		fmt.Println("Error in readMessages:", err)
 	}
 
-	if reply.Election.MSG == shared.START_ELECTION {
+	if reply.Election.MSG == shared.START_ELECTION && (reply.Election.Term > node.Term || node.VotedFor == 0) {
 		VoteRequest(server, node, reply.Election.SRC_ID, membership)
 	} else if reply.Election.MSG == shared.VOTE {
 		CountVote(server, node, &membership)
 	} else if reply.Election.MSG == shared.NEW_LEADER {
+		node.Term = reply.Election.Term
+		node.VotedFor = 0
 		fmt.Printf("Node %d is the leader for term %d\n", reply.Election.SRC_ID, node.Term)
 		node.LeaderID = reply.Election.SRC_ID
 		node.ElectionTimer = ElectionCount
+		node.Role = shared.Follower
 	}
 
 	return shared.CombineTables(&membership, &reply.Table)
@@ -99,7 +102,7 @@ func main() {
 	membership := shared.NewMembership()
 	membership.Add(self_node, &self_node)
 
-	blankElection := shared.ElectionMSG{MSG: "", SRC_ID: id}
+	blankElection := shared.ElectionMSG{MSG: "", SRC_ID: id, Term: 0}
 
 	sendMessage(server, shared.RandInt(), *membership, blankElection)
 	sendMessage(server, shared.RandInt(), *membership, blankElection)
@@ -129,7 +132,7 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 		}
 	} else {
 		// Tell other nodes you are the leader
-		electionOver := shared.ElectionMSG{MSG: shared.NEW_LEADER, SRC_ID: node.ID}
+		electionOver := shared.ElectionMSG{MSG: shared.NEW_LEADER, SRC_ID: node.ID, Term: node.Term}
 		for id := range (*membership).Members {
 			if id != node.ID {
 				sendMessage(server, id, **membership, electionOver)
@@ -182,7 +185,7 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 func runAfterY(server *rpc.Client, neighbor1 int, neighbor2 int, membership **shared.Membership, id int) {
 	fmt.Println("neightbors:", neighbor1, neighbor2)
 	// send a heartbeat to a randomly selected neighbor of yours
-	blankElection := shared.ElectionMSG{MSG: "", SRC_ID: id}
+	blankElection := shared.ElectionMSG{MSG: "", SRC_ID: id, Term: 0}
 	sendMessage(server, neighbor1, **membership, blankElection)
 	sendMessage(server, neighbor2, **membership, blankElection)
 
@@ -219,7 +222,7 @@ func StartElection(server *rpc.Client, n *shared.Node, membership *shared.Member
 
 	// Request votes from other nodes
 	fmt.Println("Starting Election...")
-	startElection := shared.ElectionMSG{MSG: shared.START_ELECTION, SRC_ID: n.ID}
+	startElection := shared.ElectionMSG{MSG: shared.START_ELECTION, SRC_ID: n.ID, Term: n.Term}
 	for id := range membership.Members {
 		if id != n.ID {
 			// send election request
@@ -231,7 +234,7 @@ func StartElection(server *rpc.Client, n *shared.Node, membership *shared.Member
 func VoteRequest(server *rpc.Client, n *shared.Node, src_ID int, membership shared.Membership) {
 	n.VotedFor = src_ID
 
-	elect := shared.ElectionMSG{MSG: shared.VOTE, SRC_ID: n.ID}
+	elect := shared.ElectionMSG{MSG: shared.VOTE, SRC_ID: n.ID, Term: n.Term}
 
 	fmt.Println("Sending Vote...")
 	sendMessage(server, src_ID, membership, elect)
@@ -251,7 +254,7 @@ func CountVote(server *rpc.Client, n *shared.Node, membership *shared.Membership
 		fmt.Printf("Node %d has won the election and is now the leader for term %d\n", n.ID, n.Term)
 
 		// Tell other nodes you are the leader
-		electionOver := shared.ElectionMSG{MSG: shared.NEW_LEADER, SRC_ID: n.ID}
+		electionOver := shared.ElectionMSG{MSG: shared.NEW_LEADER, SRC_ID: n.ID, Term: n.Term}
 		for id := range membership.Members {
 			if id != n.ID {
 				sendMessage(server, id, *membership, electionOver)

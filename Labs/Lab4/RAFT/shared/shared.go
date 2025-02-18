@@ -11,13 +11,13 @@ import (
 type Role int
 
 const (
-	MAX_NODES      = 3
-	Follower  Role = iota
-	Candidate
-	Leader
-	START_ELECTION = "start"
-	VOTE           = "vote"
-	NEW_LEADER     = "IamUrLeader"
+	MAX_NODES           = 3
+	Follower       Role = 0
+	Candidate      Role = 1
+	Leader         Role = 2
+	START_ELECTION      = "start"
+	VOTE                = "vote"
+	NEW_LEADER          = "IamUrLeader"
 )
 
 // Node struct represents a computing node.
@@ -114,6 +114,7 @@ func (m *Membership) Get(payload int, reply *Node) error {
 type ElectionMSG struct {
 	MSG    string
 	SRC_ID int
+	Term   int
 }
 
 // Request struct represents a new message request to a client
