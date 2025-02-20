@@ -1,0 +1,10 @@
+Ben Soto and Avery White
+
+Execution and Testing:
+    1) Start server - go run server.go
+    2) Modify MAX_NODES in shared.go to however many clients you will be running
+    3) Run MAX_NODES amount of clients - go run client.go <enumerated id starting at 1>
+    4) Election will take place automatically
+    5) Once leader is decided, kill the leader with ctrl+C 
+    6) Bring the killed client back up
+    7) Watch for new election and new leader
