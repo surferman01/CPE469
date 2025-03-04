@@ -55,37 +55,19 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-double **generate_matrix(int n)
-{
-    int total_size = n * n;
-    double **matrix;
 
-    for (int i = 0; i < n; i++)
-    {
-        matrix[i] = (double *)malloc(total_size * sizeof(double));
-        if (matrix[i] == NULL)
-        {
-            perror("Matrix malloc error");
-            exit(1);
-        }
-        for (int j = 0; j < n; j++)
-        {
-            matrix[i][j] = (double)rand() / RAND_MAX * MAX_VAL;
+double** genMtx(int size) {
+    double** mtx = (double**)malloc(size * sizeof(double*));
+    for (int i = 0; i < size; i++) {
+        mtx[i] = (double*)malloc(size * sizeof(double));
+    }
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            double a = 10.0;
+            double x = ((double)rand()/(double)(RAND_MAX)) * a;
+            mtx[i][j] = x;
+            printf("mtx[%d][%d]: %f\n", i, j, x);
         }
     }
-
-    return matrix;
-}
-
-void display_matrix(double **matrix, int n)
-{
-    for (int i = 0; i < n; i++)
-    {
-        printf("\t");
-        for (int j = 0; j < n; j++)
-        {
-            printf("%f ", matrix[i][j]);
-        }
-        printf("\n");
-    }
+    return mtx;
 }
