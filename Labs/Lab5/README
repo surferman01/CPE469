@@ -12,3 +12,16 @@ Execution:
     - run "sbatch jobscriptMM"
     - wait for job to execute and finish
     - run "cat MMmpi.<whatever id is here>.out"
+
+Results:
+    Distributed:
+        0 Nodes (actually runs 1 Node): 4.927240s
+        2 Nodes: 2.519347s
+        4 Nodes: 1.321160s
+
+    Sequential:
+        Trial 1: 5.414820s
+        Trial 2: 5.446986s
+        Trial 3: 5.377791s
+        Avg: 5.413199s
+
