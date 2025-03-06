@@ -1,73 +1,78 @@
-#include "mpi.h"
+#include <mpi.h>
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
 
-#define MAX_VAL 1000
+#define MAX_VAL 10
 #define N 1024
-#define CHUNK_SIZE 128
 
 double **generate_matrix(int n);
 void display_matrix(double **matrix, int n);
+void multiply_matrices(double *A, double *B, double *C, int rows_per_proc, int n);
 
 int main(int argc, char *argv[])
 {
-    int myid, numprocs, i;
-    double **res, **X, **Y;
-
+    int rank, size;
     MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    while (1)
+    int rows_per_proc = N / size; // Assume N is divisible by size
+    double A[N * N], B[N * N], C[N * N];
+    double local_A[rows_per_proc * N], local_C[rows_per_proc * N];
+
+    if (rank == 0)
     {
-        if (myid == 0)
+        // Initialize matrices A and B
+        for (int i = 0; i < N * N; i++)
         {
-            // Generate Matrices
-            srand(time(NULL));
-            X = generate_matrix(N);
-            srand(time(NULL) ^ 0xDEADBEEF);
-            Y = generate_matrix(N);
-
-            // Display input matrices
-            printf("Matrix X:\n");
-            display_matrix(X, N);
-            printf("\nMatrix Y:\n");
-            display_matrix(Y, N);
-        }
-
-        // Scatter matrices across nodes
-        MPI_Scatter(matrix, N * chunk_size, MPI_INT, local_matrix, 800 * chunk_size, MPI_INT, 0, MPI_COMM_WORLD); // TODO
-
-        // Matrix mult
-
-        // Gather result
-
-        if (myid == 0)
-        {
-            // Display Result Matrix
-            printf("\nResult Matrix:\n");
-            display_matrix(res, N);
+            A[i] = i + 1;
+            B[i] = (i + 1) % N;
         }
     }
+
+    // Broadcast matrix B to all processes
+    MPI_Bcast(B, N * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // Scatter rows of A to all processes
+    MPI_Scatter(A, rows_per_proc * N, MPI_DOUBLE, local_A, rows_per_proc * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // Perform local matrix multiplication
+    multiply_matrices(local_A, B, local_C, rows_per_proc, N);
+
+    // Gather results from all processes
+    MPI_Gather(local_C, rows_per_proc * N, MPI_DOUBLE, C, rows_per_proc * N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (rank == 0)
+    {
+        // Print result matrix C
+        for (int i = 0; i < N; i++)
+        {
+            for (int j = 0; j < N; j++)
+            {
+                printf("%f", C[i * N + j]);
+            }
+            printf("\n");
+        }
+    }
+
     MPI_Finalize();
     return 0;
 }
 
-
-double** genMtx(int size) {
-    double** mtx = (double**)malloc(size * sizeof(double*));
-    for (int i = 0; i < size; i++) {
-        mtx[i] = (double*)malloc(size * sizeof(double));
-    }
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            double a = 10.0;
-            double x = ((double)rand()/(double)(RAND_MAX)) * a;
-            mtx[i][j] = x;
-            printf("mtx[%d][%d]: %f\n", i, j, x);
+// Function to multiply matrices
+void multiply_matrices(double *A, double *B, double *C, int rows_per_proc, int n)
+{
+    for (int i = 0; i < rows_per_proc; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            C[i * n + j] = 0;
+            for (int k = 0; k < n; k++)
+            {
+                C[i * n + j] += A[i * n + k] * B[k * n + j];
+            }
         }
     }
-    return mtx;
 }
