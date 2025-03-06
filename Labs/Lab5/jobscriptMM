@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --job-name="MMmpi"
+#SBATCH --output="MMmpi.%j.%N.out"
+#SBATCH --partition=compute
+#SBATCH --nodes=4
+#SBATCH --ntasks-per-node=1
+#SBATCH --mem=8G
+#SBATCH --account="slo102"
+#SBATCH --export=ALL
+#SBATCH --time=00:10:00
+mpiexec -np 4 ./matMul

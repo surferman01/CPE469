@@ -1,0 +1,14 @@
+Avery White and Ben Soto
+
+Matrix Multiplication with MPI
+
+Parameters: 
+    - N is the width of the matrices
+    - THRESHOLD -> If N is less than the THRESHOLD than all matrices will be printed to stdout
+
+Execution:
+    - copy source code onto SDSC
+    - run "make"
+    - run "sbatch jobscriptMM"
+    - wait for job to execute and finish
+    - run "cat MMmpi.<whatever id is here>.out"
