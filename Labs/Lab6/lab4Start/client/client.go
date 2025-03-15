@@ -209,7 +209,7 @@ func runAfterY(server *rpc.Client, node *shared.Node, membership **shared.Member
 	sendMessage(server, shared.RandInt(), **membership, blankElection)
 	sendMessage(server, shared.RandInt(), **membership, blankElection)
 
-	if node.ID == node.LeaderID {
+	if (*membership).Members[id].Role == shared.Leader {
 		server.Call("Membership.Update", **membership, nil)
 	}
 
