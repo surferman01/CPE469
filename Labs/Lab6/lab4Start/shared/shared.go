@@ -334,22 +334,25 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 				idx = MAX_NODES
 			}
 
-			fmt.Println("writing to idx:", idx)
+			// fmt.Println("writing to idx:", idx)
 			m.Members[idx].Hashes[args.Key] = args.Value
-			fmt.Println("RIGHT BEFORE LOG")
+			// fmt.Println("RIGHT BEFORE LOG")
 		}
 
-		printMembership(*m)
+		// printMembership(*m)
 		// send update table to client (loc)
 		(*REQUESTS).Add(req, res)
 		reply.Status = "success"
 	} else if value != "" {
 		for i := 0; i < REPLICAS; i++ {
 			idx := (loc+i+MAX_NODES)%MAX_NODES
+			if idx == 0 {
+				idx = MAX_NODES
+			}
 			m.Members[idx].Hashes[args.Key] = args.Value
 		}
 
-		printMembership(*m)
+		// printMembership(*m)
 		// send update table to client (loc)
 		(*REQUESTS).Add(req, res)
 		reply.Status = "key exists - successfully overwritten"
