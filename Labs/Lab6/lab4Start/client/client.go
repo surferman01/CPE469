@@ -125,7 +125,7 @@ func main() {
 	sendMessage(server, shared.RandInt(), *membership, blankElection)
 
 	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, &self_node, &membership, id) })
-	time.AfterFunc(time.Second*Y_TIME, func() { runAfterY(server, &membership, id) })
+	time.AfterFunc(time.Second*Y_TIME, func() { runAfterY(server, &self_node, &membership, id) })
 	// time.AfterFunc(time.Second*time.Duration(Z_TIME), func() { runAfterZ(id) })
 
 	wg.Add(1)
@@ -202,18 +202,18 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 	time.AfterFunc(time.Second*X_TIME, func() { runAfterX(server, node, membership, id) })
 }
 
-func runAfterY(server *rpc.Client, membership **shared.Membership, id int) {
+func runAfterY(server *rpc.Client, node *shared.Node, membership **shared.Membership, id int) {
 	// fmt.Println("neightbors:", neighbor1, neighbor2)
 	// send a heartbeat to a randomly selected neighbor of yours
 	blankElection := shared.ElectionMSG{MSG: "", SRC_ID: id}
 	sendMessage(server, shared.RandInt(), **membership, blankElection)
 	sendMessage(server, shared.RandInt(), **membership, blankElection)
 
-	if (*membership).Members[id].Role == shared.Leader {
+	if node.ID == node.LeaderID {
 		server.Call("Membership.Update", **membership, nil)
 	}
 
-	time.AfterFunc(time.Second*Y_TIME, func() { runAfterY(server, membership, id) })
+	time.AfterFunc(time.Second*Y_TIME, func() { runAfterY(server, node, membership, id) })
 }
 
 // func runAfterZ(id int) {
