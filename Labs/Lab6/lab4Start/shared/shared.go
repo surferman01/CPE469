@@ -305,17 +305,8 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 	req := Request{ID: loc, Table: *m, Election: blankElection}
 
 	if value == "" && loc != 0 {
-		overflow := false
 		for i := 0; i < REPLICAS; i++ {
-			idx := loc + i
-			if idx > MAX_NODES {
-				overflow = true
-			}
-
-			if overflow {
-				idx = (idx % MAX_NODES) + 1
-			}
-
+			idx := (loc+i+MAX_NODES)%MAX_NODES + 1
 			m.Members[idx].Hashes[args.Key] = args.Value
 		}
 
@@ -324,17 +315,8 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 		(*REQUESTS).Add(req, res)
 		reply.Status = "success"
 	} else if value != "" {
-		overflow := false
 		for i := 0; i < REPLICAS; i++ {
-			idx := loc + i
-			if idx > MAX_NODES {
-				overflow = true
-			}
-
-			if overflow {
-				idx = (idx % MAX_NODES) + 1
-			}
-
+			idx := (loc+i+MAX_NODES)%MAX_NODES + 1
 			m.Members[idx].Hashes[args.Key] = args.Value
 		}
 
