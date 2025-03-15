@@ -1,0 +1,27 @@
+# Lab 6 Instructions
+
+## Running the Server
+
+To start the server, navigate to the `server` directory and run the following command:
+
+`go run server.go`
+
+## Initializing Nodes
+
+Adjust MAX_NODES in shared to choose the cluster size. (default 5)
+
+`go run client.go [id]`
+
+## Sending Requests (get/put)
+
+Start the messanger.go file and send requests in the following format:
+
+[reqType] [key] [value]
+
+ex) put Anna 100
+
+ex) get Anna .
+
+You need to have 3 args for each request (even get), but the third argument of the get request does nothing.
+
+`go run messenger.go`
