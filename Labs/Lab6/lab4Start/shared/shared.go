@@ -12,7 +12,7 @@ import (
 type Role int
 
 const (
-	MAX_NODES           = 3
+	MAX_NODES           = 5
 	Follower       Role = 0
 	Candidate      Role = 1
 	Leader         Role = 2
@@ -120,7 +120,7 @@ func (m *Membership) Update(payload Membership, reply *Membership) error {
 		}
 	}
 
-	fmt.Println("Updating server membership...")
+	// fmt.Println("Updating server membership...")
 	printMembership(*m)
 
 	return nil
@@ -266,9 +266,9 @@ func checkNode(m *Membership, location int, args *GetArgs) (string, int) {
 	for i := 0; i < 3; i++ {
 		loc := (location+i+MAX_NODES)%MAX_NODES + 1
 		fmt.Println("checking node:", loc)
-		fmt.Println("CJECKING MEBRERSHIP")
-		printMembership(*m)
-		fmt.Println("DONE CHECKING MEMEBRSHIP")
+		// fmt.Println("CJECKING MEBRERSHIP")
+		// printMembership(*m)
+		// fmt.Println("DONE CHECKING MEMEBRSHIP")
 		if node, exists := m.Members[loc]; exists {
 			if !node.Alive {
 				continue
@@ -329,8 +329,14 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 
 	if value == "" && loc != 0 {
 		for i := 0; i < REPLICAS; i++ {
-			idx := (loc+i+MAX_NODES)%MAX_NODES + 1
+			idx := (loc+i+MAX_NODES)%MAX_NODES
+			if idx == 0 {
+				idx = MAX_NODES
+			}
+
+			fmt.Println("writing to idx:", idx)
 			m.Members[idx].Hashes[args.Key] = args.Value
+			fmt.Println("RIGHT BEFORE LOG")
 		}
 
 		printMembership(*m)
@@ -339,7 +345,7 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 		reply.Status = "success"
 	} else if value != "" {
 		for i := 0; i < REPLICAS; i++ {
-			idx := (loc+i+MAX_NODES)%MAX_NODES + 1
+			idx := (loc+i+MAX_NODES)%MAX_NODES
 			m.Members[idx].Hashes[args.Key] = args.Value
 		}
 

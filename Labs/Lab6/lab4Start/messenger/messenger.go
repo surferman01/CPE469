@@ -48,7 +48,7 @@ func main() {
 		var reqType, key, value string
 		fmt.Scan(&reqType, &key, &value)
 
-		fmt.Printf("reqType: %s\nkey: %s\nvalue: %s\n", reqType, key, value)
+		// fmt.Printf("reqType: %s\nkey: %s\nvalue: %s\n", reqType, key, value)
 
 		if reqType == "get" {
 			var res shared.GetReply
