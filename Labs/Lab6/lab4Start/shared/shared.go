@@ -102,8 +102,8 @@ func (m *Membership) Add(payload Node, reply *Node) error {
 
 // THIS IS UNUSED
 // Updates entire membership table
-func (m *Membership) Update(payload *Membership, reply *Membership) error {
-	m = payload
+func (m *Membership) Update(payload Membership, reply *Membership) error {
+	*m = payload
 	fmt.Println("Updating server membership...")
 	printMembership(*m)
 
@@ -249,7 +249,7 @@ func checkNode(m *Membership, location int, args *GetArgs) (string, int) {
 		loc := (location+i+MAX_NODES)%MAX_NODES + 1
 		fmt.Println("checking node:", loc)
 		if node, exists := m.Members[loc]; exists {
-			if node.Alive == false {
+			if !node.Alive {
 				continue
 			}
 			if value, ok := node.Hashes[args.Key]; ok {
