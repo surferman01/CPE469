@@ -249,6 +249,9 @@ func checkNode(m *Membership, location int, args *GetArgs) (string, int) {
 		loc := (location+i+MAX_NODES)%MAX_NODES + 1
 		fmt.Println("checking node:", loc)
 		if node, exists := m.Members[loc]; exists {
+			if node.Alive == false {
+				continue
+			}
 			if value, ok := node.Hashes[args.Key]; ok {
 				fmt.Println("value found @:", loc)
 				return value, loc
