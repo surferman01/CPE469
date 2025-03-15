@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	// "sync"
-	// "time"
+	"time"
 	// "net/http"
 	// "net/rpc"
 )
@@ -40,7 +40,10 @@ type Node struct {
 	VoteCount     int
 
 	// Consistent Hashing
-	Hashes map[string]string
+	Hashes map[string]struct {
+		Value string
+		Timestamp float64
+	}
 	// Mu     sync.Mutex
 }
 
@@ -258,7 +261,7 @@ func checkNode(m *Membership, location int, args *GetArgs) (string, int) {
 			}
 			if value, ok := node.Hashes[args.Key]; ok {
 				fmt.Println("value found @:", loc)
-				return value, loc
+				return value.Value, loc
 			}
 			return "", loc
 		}
@@ -293,7 +296,9 @@ func (m *Membership) GetKV(args *GetArgs, reply *GetReply) error {
 
 	return nil
 }
-
+func calcTime() float64 {
+	return float64(time.Now().Unix())
+}
 func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 	reqCount++
 	fmt.Println("Request #:", reqCount)
@@ -308,13 +313,16 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 
 	blankElection := ElectionMSG{MSG: "", SRC_ID: loc, Term: 0}
 
-	req := Request{ID: loc, Table: *m, Election: blankElection}
-
+	// req := Request{ID: loc, Table: *m, Election: blankElection}
 	if value == "" && loc != 0 {
 		for i := 0; i < REPLICAS; i++ {
 			idx := (loc+i+MAX_NODES)%MAX_NODES + 1
-			m.Members[idx].Hashes[args.Key] = args.Value
+			hashEntry := m.Members[idx].Hashes[args.Key]
+			hashEntry.Value = args.Value
+			hashEntry.Timestamp = calcTime()
+			m.Members[idx].Hashes[args.Key] = hashEntry
 		}
+		req := Request{ID: loc, Table: *m, Election: blankElection}
 
 		printMembership(*m)
 		// send update table to client (loc)
@@ -323,8 +331,12 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 	} else if value != "" {
 		for i := 0; i < REPLICAS; i++ {
 			idx := (loc+i+MAX_NODES)%MAX_NODES + 1
-			m.Members[idx].Hashes[args.Key] = args.Value
+			hashEntry := m.Members[idx].Hashes[args.Key]
+			hashEntry.Value = args.Value
+			hashEntry.Timestamp = calcTime()
+			m.Members[idx].Hashes[args.Key] = hashEntry
 		}
+		req := Request{ID: loc, Table: *m, Election: blankElection}
 
 		printMembership(*m)
 		// send update table to client (loc)

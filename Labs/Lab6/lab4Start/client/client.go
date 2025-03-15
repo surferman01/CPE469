@@ -105,7 +105,10 @@ func main() {
 		ElectionTimer: ElectionCount,
 		VotedFor:      0,
 		VoteCount:     0,
-		Hashes:        make(map[string]string),
+		Hashes: make(map[string]struct {
+			Value     string
+			Timestamp float64
+		}),
 	}
 	var self_node_response shared.Node // Allocate space for a response to overwrite this
 
