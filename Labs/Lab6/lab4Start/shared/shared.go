@@ -88,9 +88,10 @@ func NewMembership() *Membership {
 
 // Adds a node to the membership list.
 func (m *Membership) Add(payload Node, reply *Node) error {
-	// if _, exists := m.Members[payload.ID]; exists {
-	// 	return fmt.Errorf("Node with ID %d already exists", payload.ID)
-	// }
+	if _, exists := m.Members[payload.ID]; exists {
+		// don't overwrite hashtable
+		payload.Hashes = m.Members[payload.ID].Hashes
+	}
 
 	m.Members[payload.ID] = payload
 	*reply = payload
@@ -281,6 +282,8 @@ func (m *Membership) GetKV(args *GetArgs, reply *GetReply) error {
 		// fmt.Println("get:", reply.Value, "location:", loc)
 	}
 
+	printMembership(*m)
+
 	return nil
 }
 
@@ -294,15 +297,48 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 	value := ""
 	loc := 0
 	value, loc = checkNode(m, location, &checkArgs)
+	res := new(bool)
+
+	blankElection := ElectionMSG{MSG: "", SRC_ID: loc, Term: 0}
+	req := Request{ID: loc, Table: *m, Election: blankElection}
 
 	if value == "" && loc != 0 {
 		m.Members[loc].Hashes[args.Key] = args.Value
+		printMembership(*m)
+		// send update table to client (loc)
+		(*REQUESTS).Add(req, res)
 		reply.Status = "success"
 	} else if value != "" {
-		reply.Status = "key exists"
+		m.Members[loc].Hashes[args.Key] = args.Value
+		printMembership(*m)
+		// send update table to client (loc)
+		(*REQUESTS).Add(req, res)
+		reply.Status = "key exists - successfully overwritten"
 	} else {
 		reply.Status = "no node available"
 	}
 	// fmt.Println("put:", args.Key, args.Value, "location:", location)
 	return nil
+}
+
+func printMembership(m Membership) {
+	for _, val := range m.Members {
+		status := "is Alive"
+		if !val.Alive {
+			status = "is Dead"
+		}
+		fmt.Printf("Node %d has hb %d, time %.1f and %s\n", val.ID, val.Hbcounter, val.Time, status)
+		fmt.Println("Hashes:", val.Hashes)
+	}
+	fmt.Println("")
+	// fmt.Println("repeats", repeats)
+	// fmt.Println("")
+
+}
+
+// GLOBAL REQUESTS
+var REQUESTS **Requests
+
+func SetRequests(r **Requests) {
+	REQUESTS = r
 }

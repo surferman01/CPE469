@@ -163,7 +163,7 @@ func runAfterX(server *rpc.Client, node *shared.Node, membership **shared.Member
 	// this was membership.update before,  maybe causing the concurrent map writes
 
 	// Send the updated node information to the server membership table
-	if err := server.Call("Membership.Add", *node, nil); err != nil {
+	if err := server.Call("Membership.Add", *node, node); err != nil {
 		fmt.Println("Error: Membership.Add()", err)
 	} else {
 		// fmt.Printf("Success: Node %d updated\n", id)
@@ -224,6 +224,7 @@ func printMembership(m shared.Membership) {
 			status = "is Dead"
 		}
 		fmt.Printf("Node %d has hb %d, time %.1f and %s\n", val.ID, val.Hbcounter, val.Time, status)
+		fmt.Println("Hashes:", val.Hashes)
 	}
 	fmt.Println("")
 	// fmt.Println("repeats", repeats)

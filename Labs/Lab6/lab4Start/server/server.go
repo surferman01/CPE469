@@ -15,6 +15,8 @@ func main() {
 	nodes := shared.NewMembership()
 	requests := shared.NewRequests()
 
+	shared.SetRequests(&requests)
+
 	// register nodes with `rpc.DefaultServer`
 	rpc.Register(nodes)
 	rpc.Register(requests)
