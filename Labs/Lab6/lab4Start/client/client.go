@@ -209,6 +209,8 @@ func runAfterY(server *rpc.Client, membership **shared.Membership, id int) {
 	sendMessage(server, shared.RandInt(), **membership, blankElection)
 	sendMessage(server, shared.RandInt(), **membership, blankElection)
 
+	server.Call("Membership.Update", **membership, nil)
+
 	time.AfterFunc(time.Second*Y_TIME, func() { runAfterY(server, membership, id) })
 }
 

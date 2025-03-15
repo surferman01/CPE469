@@ -95,21 +95,20 @@ func (m *Membership) Add(payload Node, reply *Node) error {
 	}
 
 	m.Members[payload.ID] = payload
+
 	*reply = payload
 	return nil
 }
 
 // THIS IS UNUSED
-// Updates a node in the membership list.
-// func (m *Membership) Update(payload Node, reply *Node) error {
-// 	// if _, exists := m.Members[payload.ID]; !exists {
-// 	// 	return fmt.Errorf("Node with ID %d doesn't exist", payload.ID)
-// 	// }
+// Updates entire membership table
+func (m *Membership) Update(payload *Membership, reply *Membership) error {
+	m = payload
+	fmt.Println("Updating server membership...")
+	printMembership(*m)
 
-// 	m.Members[payload.ID] = payload
-// 	*reply = payload
-// 	return nil
-// }
+	return nil
+}
 
 // THIS IS UNUSED
 // Returns a node with specific ID.
