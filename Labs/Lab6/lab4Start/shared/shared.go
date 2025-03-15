@@ -19,6 +19,7 @@ const (
 	START_ELECTION      = "start"
 	VOTE                = "vote"
 	NEW_LEADER          = "IamUrLeader"
+	REPLICAS            = 3
 )
 
 // Node struct represents a computing node.
@@ -300,16 +301,43 @@ func (m *Membership) PutKV(args *PutArgs, reply *PutReply) error {
 	res := new(bool)
 
 	blankElection := ElectionMSG{MSG: "", SRC_ID: loc, Term: 0}
+
 	req := Request{ID: loc, Table: *m, Election: blankElection}
 
 	if value == "" && loc != 0 {
-		m.Members[loc].Hashes[args.Key] = args.Value
+		overflow := false
+		for i := 0; i < REPLICAS; i++ {
+			idx := loc + i
+			if idx > MAX_NODES {
+				overflow = true
+			}
+
+			if overflow {
+				idx = (idx % MAX_NODES) + 1
+			}
+
+			m.Members[idx].Hashes[args.Key] = args.Value
+		}
+
 		printMembership(*m)
 		// send update table to client (loc)
 		(*REQUESTS).Add(req, res)
 		reply.Status = "success"
 	} else if value != "" {
-		m.Members[loc].Hashes[args.Key] = args.Value
+		overflow := false
+		for i := 0; i < REPLICAS; i++ {
+			idx := loc + i
+			if idx > MAX_NODES {
+				overflow = true
+			}
+
+			if overflow {
+				idx = (idx % MAX_NODES) + 1
+			}
+
+			m.Members[idx].Hashes[args.Key] = args.Value
+		}
+
 		printMembership(*m)
 		// send update table to client (loc)
 		(*REQUESTS).Add(req, res)
