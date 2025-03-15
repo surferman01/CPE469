@@ -100,9 +100,26 @@ func (m *Membership) Add(payload Node, reply *Node) error {
 	return nil
 }
 
-// Updates entire membership table
+// Updates entire membership table except hashes
 func (m *Membership) Update(payload Membership, reply *Membership) error {
-	*m = payload
+	for id, payloadNode := range payload.Members {
+		if existingNode, exists := m.Members[id]; exists {
+			existingNode.Hbcounter = payloadNode.Hbcounter
+			existingNode.Time = payloadNode.Time
+			existingNode.Alive = payloadNode.Alive
+			existingNode.Role = payloadNode.Role
+			existingNode.LeaderID = payloadNode.LeaderID
+			existingNode.Term = payloadNode.Term
+			existingNode.ElectionTimer = payloadNode.ElectionTimer
+			existingNode.VotedFor = payloadNode.VotedFor
+			existingNode.VoteCount = payloadNode.VoteCount
+
+			m.Members[id] = existingNode
+		} else {
+			m.Members[id] = payloadNode
+		}
+	}
+
 	fmt.Println("Updating server membership...")
 	printMembership(*m)
 
@@ -195,7 +212,7 @@ func CombineTables(table1 *Membership, table2 *Membership) *Membership {
 
 	for id, node := range table2.Members {
 		if existingNode, exists := combined.Members[id]; exists {
-			if node.Time > existingNode.Time + 10 {
+			if node.Time > existingNode.Time+10 {
 				combined.Members[id] = node
 			} else if node.Hbcounter > existingNode.Hbcounter {
 				combined.Members[id] = node
@@ -250,7 +267,7 @@ func checkNode(m *Membership, location int, args *GetArgs) (string, int) {
 		loc := (location+i+MAX_NODES)%MAX_NODES + 1
 		fmt.Println("checking node:", loc)
 		fmt.Println("CJECKING MEBRERSHIP")
-		printMembership(*m);
+		printMembership(*m)
 		fmt.Println("DONE CHECKING MEMEBRSHIP")
 		if node, exists := m.Members[loc]; exists {
 			if !node.Alive {
